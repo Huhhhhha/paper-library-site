@@ -226,10 +226,17 @@ html.no-mathjax .equation{
 }
 </style>
 <style>
-.back-home{display:inline-block;margin-bottom:10px;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
-.back-home:hover{text-decoration:underline}
 .back-mobile{display:none}
 @media (max-width:760px){.back-mobile{display:inline-flex}}
+.year{margin:16px 10px 6px;font-size:11.5px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.nav-item{display:block;padding:8px 10px;border-radius:8px;border-left:3px solid transparent;color:var(--fg)}
+.nav-item:hover{background:var(--accent-soft);text-decoration:none}
+.nav-item.active{color:var(--accent);font-weight:600;background:var(--accent-soft);border-left-color:var(--accent)}
+.nav-title{display:block;font-size:13.5px;font-weight:600;line-height:1.5}
+.nav-sub{display:block;font-size:11.5px;color:var(--muted);line-height:1.5}
+.side-foot{padding:12px 20px;border-top:1px solid var(--line);font-size:12px}
+.site-home{display:block;padding:8px 10px;margin-bottom:2px;font-size:13.5px;color:var(--fg);border-radius:8px}
+.site-home:hover{background:var(--accent-soft);text-decoration:none}
 </style>
 </head>
 <body>
@@ -237,46 +244,18 @@ html.no-mathjax .equation{
 <div class="book">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <a class="back-home" href="../../index.html">← 论文阅读库</a>
-      <div class="brand-kicker">Technical Report</div>
-      <div class="brand-title">论文技术报告：SuperMap——面向视觉-语言导航的时空 SLAM 系统</div>
-      <div class="brand-sub">技术报告</div>
+      <div class="brand-kicker">PAPER LIBRARY</div>
+      <div class="brand-title"><a href="../../index.html" style="color:inherit;text-decoration:none">论文阅读库</a></div>
+      <div class="brand-sub">Huhhhhha · 已读 1 篇</div>
     </div>
     <div class="toc-search">
-      <input id="toc-filter" type="search" placeholder="筛选章节…" autocomplete="off">
+      <input id="paper-filter" type="search" placeholder="搜索论文…" autocomplete="off">
     </div>
-    <nav class="toc-nav" id="toc-nav">
-<li class="lvl-2"><a href="#h2-1">📋 论文概览</a></li>
-<li class="lvl-3"><a href="#h3-1-1">基本信息</a></li>
-<li class="lvl-3"><a href="#h3-1-2">一句话总结</a></li>
-<li class="lvl-3"><a href="#h3-1-3">核心贡献</a></li>
-<li class="lvl-2"><a href="#h2-2">🎯 研究背景与动机</a></li>
-<li class="lvl-3"><a href="#h3-2-1">问题定义</a></li>
-<li class="lvl-3"><a href="#h3-2-2">现有方法的局限性</a></li>
-<li class="lvl-2"><a href="#h2-3">🔬 方法论</a></li>
-<li class="lvl-3"><a href="#h3-3-1">3.1 几何层：相机位姿</a></li>
-<li class="lvl-3"><a href="#h3-3-2">3.2 实例层：混合跟踪状态与 3D 运动补偿</a></li>
-<li class="lvl-3"><a href="#h3-3-3">3.3 实例层：概率几何一致性更新（变化检测）</a></li>
-<li class="lvl-3"><a href="#h3-3-4">3.4 实例层：贝叶斯语义融合</a></li>
-<li class="lvl-3"><a href="#h3-3-5">3.5 拓扑层：4D 场景图</a></li>
-<li class="lvl-3"><a href="#h3-3-6">3.6 视觉-语言导航接口</a></li>
-<li class="lvl-2"><a href="#h2-4">📊 实验与结果</a></li>
-<li class="lvl-3"><a href="#h3-4-1">ScanNet 类别级结果</a></li>
-<li class="lvl-3"><a href="#h3-4-2">消融实验</a></li>
-<li class="lvl-3"><a href="#h3-4-3">运行频率</a></li>
-<li class="lvl-2"><a href="#h2-5">💡 关键见解</a></li>
-<li class="lvl-2"><a href="#h2-6">🔍 局限性与未来工作</a></li>
-<li class="lvl-3"><a href="#h3-6-1">当前局限</a></li>
-<li class="lvl-3"><a href="#h3-6-2">未来方向</a></li>
-<li class="lvl-2"><a href="#h2-7">📚 相关工作对比</a></li>
-<li class="lvl-2"><a href="#h2-8">🎓 综合评价</a></li>
-<li class="lvl-3"><a href="#h3-8-1">优点</a></li>
-<li class="lvl-3"><a href="#h3-8-2">可改进之处</a></li>
-<li class="lvl-3"><a href="#h3-8-3">推荐阅读对象</a></li>
-<li class="lvl-2"><a href="#h2-9">📎 附录</a></li>
-<li class="lvl-3"><a href="#h3-9-1">术语表</a></li>
-<li class="lvl-3"><a href="#h3-9-2">参考资源</a></li>
+    <nav class="toc-nav" id="site-nav">
+      <a class="site-home" href="../../index.html">首页</a>
+      <div class="year">2026</div><a class="nav-item active" href="../../papers/2026-08_supermap/technical_report.html"><span class="nav-title">SuperMap</span><span class="nav-sub">SuperMap：面向视觉-语言导航的时空 SLAM 系统</span></a>
     </nav>
+    <div class="side-foot"><a href="https://github.com/Huhhhhha/paper-library-site" target="_blank" rel="noopener">GitHub 仓库 ↗</a></div>
   </aside>
 
   <div class="main">
@@ -298,9 +277,8 @@ html.no-mathjax .equation{
 
     <article class="article" id="content">
 <h1 id="top">论文技术报告：SuperMap——面向视觉-语言导航的时空 SLAM 系统</h1>
-<blockquote class="lead"><p><strong>arXiv ID</strong>：2608.22896<br> <strong>原文标题</strong>：SuperMap: A Spatio-Temporal SLAM System for Visual-Language Navigation<br> <strong>整理日期</strong>：2026-11-25<br> <strong>网页版报告</strong>：<a href="technical_report.html" target="_blank" rel="noopener">technical_report.html</a></p></blockquote>
+<blockquote class="lead"><p><strong>arXiv ID</strong>：2608.22896<br> <strong>原文标题</strong>：SuperMap: A Spatio-Temporal SLAM System for Visual-Language Navigation<br> <strong>整理日期</strong>：2026-11-25</p></blockquote>
 <hr>
-<blockquote class="lead"><p><strong>阅读提示</strong>：GitHub 的 Markdown 预览不含本项目排版。完整效果请看 <a href="https://huhhhhha.github.io/paper-library-site/papers/2026-08_supermap/technical_report.html" target="_blank" rel="noopener">网页版报告</a>。</p></blockquote>
 <h2 id="h2-1">📋 论文概览</h2>
 <h3 id="h3-1-1">基本信息</h3>
 <ul><li><strong>作者</strong>：Shibo Zhao、Guofei Chen、Honghao Zhu、Zhiheng Li、Changwei Yao 等</li><li><strong>机构</strong>：卡内基梅隆大学机器人研究所</li><li><strong>发布时间</strong>：2026 年 8 月</li><li><strong>领域</strong>：语义 SLAM、开放词汇建图、4D 场景图、视觉-语言导航</li></ul>
@@ -505,6 +483,25 @@ $$</div>
   document.querySelectorAll("#toc-nav a").forEach(function (a) {
     a.addEventListener("click", function () { document.body.classList.remove("nav-open"); });
   });
+})();
+</script>
+<script>
+(function () {
+  var f = document.getElementById("paper-filter");
+  if (!f) return;
+  function apply() {
+    var q = f.value.trim().toLowerCase();
+    document.querySelectorAll("#site-nav .nav-item").forEach(function (a) {
+      a.style.display = !q || a.textContent.toLowerCase().indexOf(q) !== -1 ? "" : "none";
+    });
+    document.querySelectorAll("#site-nav .year").forEach(function (y) {
+      var any = Array.prototype.slice.call(y.parentNode.querySelectorAll(".nav-item")).some(function (a) {
+        return a.style.display !== "none";
+      });
+      y.style.display = any ? "" : "none";
+    });
+  }
+  f.addEventListener("input", apply);
 })();
 </script>
 </body>
