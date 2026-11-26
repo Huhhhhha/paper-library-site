@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>论文技术报告：SuperMap——面向视觉-语言导航的时空 SLAM 系统</title>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("lp-theme");
+    if (t === "dark" || t === "light") {
+      document.documentElement.setAttribute("data-theme", t);
+    }
+  } catch (e) {}
+})();
+</script>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]], processEscapes: true },
+  options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"] },
+  svg: { fontCache: "global" }
+};
+</script>
+<script defer src="../../assets/mathjax/tex-svg.js"></script>
+<style>
+:root{
+  --sidebar-w:300px;
+  --content-w:820px;
+  --bg:#ffffff;
+  --bg-soft:#fafafa;
+  --fg:#333333;
+  --fg-strong:#111418;
+  --muted:#6b7280;
+  --line:#e6e8eb;
+  --line-strong:#d8dde2;
+  --accent:#2563eb;
+  --accent-soft:rgba(37,99,235,.08);
+  --th:#f3f5f7;
+  --code-bg:#f5f7f9;
+  --quote-bg:#f7f9fb;
+  --shadow:0 6px 24px rgba(15,23,42,.06);
+}
+html[data-theme="dark"]{
+  --bg:#16181d;
+  --bg-soft:#121418;
+  --fg:#d7dbe0;
+  --fg-strong:#f1f4f8;
+  --muted:#98a2ae;
+  --line:#2a2f36;
+  --line-strong:#343a43;
+  --accent:#6ea8fe;
+  --accent-soft:rgba(110,168,254,.12);
+  --th:#232830;
+  --code-bg:#1e2229;
+  --quote-bg:#1b1f26;
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+  font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:60;transition:width .1s linear}
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+  background:var(--bg-soft);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;z-index:50;
+}
+.brand{padding:22px 22px 14px;border-bottom:1px solid var(--line)}
+.brand-kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.brand-title{font-size:15px;font-weight:700;color:var(--fg-strong);line-height:1.5}
+.brand-sub{margin-top:8px;font-size:12px;color:var(--muted)}
+.toc-search{padding:14px 18px 8px}
+.toc-search input{
+  width:100%;padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--bg);color:var(--fg);font-size:13px;outline:none;
+}
+.toc-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.toc-nav{flex:1;overflow-y:auto;padding:8px 12px 28px}
+.toc-nav ul{list-style:none;margin:0;padding:0}
+.toc-nav a{
+  display:block;padding:5px 10px;margin:1px 0;border-radius:6px;
+  color:var(--fg);font-size:13.5px;line-height:1.55;border-left:3px solid transparent;
+}
+.toc-nav a:hover{background:var(--accent-soft);text-decoration:none}
+.toc-nav a.active{color:var(--accent);font-weight:600;background:var(--accent-soft);border-left-color:var(--accent)}
+.toc-nav .lvl-3 a{padding-left:24px;font-size:12.8px;color:var(--muted)}
+.toc-nav .lvl-3 a.active{color:var(--accent)}
+
+/* ---------- main ---------- */
+.main{margin-left:var(--sidebar-w);min-height:100vh}
+.toolbar{
+  position:sticky;top:0;z-index:40;height:56px;display:flex;align-items:center;gap:10px;
+  padding:0 28px;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  border-bottom:1px solid var(--line);backdrop-filter:saturate(180%) blur(10px);
+}
+.toolbar .crumb{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toolbar .spacer{flex:1}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;
+  border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg);
+  font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn svg{width:15px;height:15px}
+#menu-btn{display:none}
+.article{max-width:var(--content-w);margin:0 auto;padding:46px 56px 90px}
+.article h1{font-size:32px;line-height:1.4;margin:0 0 18px;color:var(--fg-strong);font-weight:750}
+.article h2{
+  font-size:24px;margin:52px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--line);
+  color:var(--fg-strong);font-weight:700;line-height:1.45;
+}
+.article h3{font-size:18.5px;margin:30px 0 10px;color:var(--fg-strong);font-weight:650}
+.article h4{font-size:16px;margin:22px 0 8px;color:var(--fg-strong)}
+.article p{margin:12px 0}
+.article ul,.article ol{margin:12px 0;padding-left:26px}
+.article li{margin:6px 0}
+.article li>ul,.article li>ol{margin:4px 0}
+.article hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+.article strong{color:var(--fg-strong);font-weight:650}
+.article code{
+  padding:2px 5px;border-radius:5px;background:var(--code-bg);
+  font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;
+}
+.article pre{
+  background:var(--code-bg);border:1px solid var(--line);border-radius:10px;
+  padding:16px;overflow-x:auto;line-height:1.65;font-size:13.5px;
+}
+.article pre code{padding:0;background:none}
+.article blockquote{
+  margin:18px 0;padding:16px 20px;border-left:4px solid var(--line-strong);
+  background:var(--quote-bg);border-radius:0 10px 10px 0;color:var(--fg);
+}
+.article blockquote p{margin:4px 0}
+.article blockquote.lead{border-left-color:var(--accent)}
+.article blockquote.lead strong{color:var(--accent)}
+
+/* callouts */
+.callout{
+  margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:10px;background:var(--quote-bg);
+}
+.callout .callout-title{font-weight:700;color:var(--fg-strong);margin-bottom:4px;font-size:15px}
+.callout p{margin:6px 0}
+.callout.tip{border-left-color:#16a34a}
+.callout.warning{border-left-color:#d97706}
+.callout.note{border-left-color:#0891b2}
+.callout.important{border-left-color:#dc2626}
+
+/* figures */
+figure{margin:26px 0;text-align:center}
+figure img{
+  max-width:100%;height:auto;border-radius:8px;
+  box-shadow:var(--shadow);background:#fff;
+}
+figcaption{margin-top:10px;color:var(--muted);font-size:13.5px;line-height:1.7;text-align:center}
+figure.plain img{box-shadow:none}
+
+/* tables */
+.table-wrap{width:100%;overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.7;background:var(--bg)}
+thead th{
+  background:var(--th);color:var(--fg-strong);font-weight:650;
+  padding:10px 12px;border-bottom:1px solid var(--line-strong);white-space:nowrap;
+}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:nth-child(even){background:color-mix(in srgb,var(--th) 45%,transparent)}
+.align-right{text-align:right}
+.align-center{text-align:center}
+
+/* equation */
+.equation{
+  margin:20px 0;padding:6px 0;overflow-x:auto;
+}
+html.no-mathjax .equation{
+  font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:13px;
+  background:var(--code-bg);border:1px dashed var(--line-strong);border-radius:8px;
+  padding:12px 14px;white-space:pre-wrap;
+}
+
+/* KPI grid */
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+.kpi .item{padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--bg-soft)}
+.kpi .num{font-size:24px;font-weight:750;color:var(--accent);line-height:1.3}
+.kpi .lbl{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+/* footer */
+.site-footer{
+  max-width:var(--content-w);margin:0 auto;padding:22px 56px 60px;
+  color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+}
+
+/* responsive */
+@media (max-width: 980px){
+  :root{--sidebar-w:280px}
+  .article{padding:36px 36px 80px}
+}
+@media (max-width: 760px){
+  .sidebar{transform:translateX(-100%);transition:transform .22s ease;box-shadow:var(--shadow)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  .main{margin-left:0}
+  #menu-btn{display:inline-flex}
+  .article{padding:26px 20px 70px}
+  .article h1{font-size:26px}
+  .article h2{font-size:21px}
+  .toolbar{padding:0 16px}
+}
+
+/* print */
+@media print{
+  #progress,.sidebar,.toolbar,.site-footer{display:none !important}
+  .main{margin-left:0}
+  .article{max-width:none;padding:0}
+  body{font-size:11.5pt;line-height:1.75}
+  h2{break-after:avoid}
+  figure,.table-wrap,pre,blockquote,.callout{break-inside:avoid}
+  a{color:#000;text-decoration:none}
+  figure img{box-shadow:none}
+}
+</style>
+<style>
+.back-home{display:inline-block;margin-bottom:10px;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
+.back-home:hover{text-decoration:underline}
+.back-mobile{display:none}
+@media (max-width:760px){.back-mobile{display:inline-flex}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="book">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <a class="back-home" href="../../index.html">← 论文阅读库</a>
+      <div class="brand-kicker">Technical Report</div>
+      <div class="brand-title">论文技术报告：SuperMap——面向视觉-语言导航的时空 SLAM 系统</div>
+      <div class="brand-sub">技术报告</div>
+    </div>
+    <div class="toc-search">
+      <input id="toc-filter" type="search" placeholder="筛选章节…" autocomplete="off">
+    </div>
+    <nav class="toc-nav" id="toc-nav">
+<li class="lvl-2"><a href="#h2-1">📋 论文概览</a></li>
+<li class="lvl-3"><a href="#h3-1-1">基本信息</a></li>
+<li class="lvl-3"><a href="#h3-1-2">一句话总结</a></li>
+<li class="lvl-3"><a href="#h3-1-3">核心贡献</a></li>
+<li class="lvl-2"><a href="#h2-2">🎯 研究背景与动机</a></li>
+<li class="lvl-3"><a href="#h3-2-1">问题定义</a></li>
+<li class="lvl-3"><a href="#h3-2-2">现有方法的局限性</a></li>
+<li class="lvl-2"><a href="#h2-3">🔬 方法论</a></li>
+<li class="lvl-3"><a href="#h3-3-1">3.1 几何层：相机位姿</a></li>
+<li class="lvl-3"><a href="#h3-3-2">3.2 实例层：混合跟踪状态与 3D 运动补偿</a></li>
+<li class="lvl-3"><a href="#h3-3-3">3.3 实例层：概率几何一致性更新（变化检测）</a></li>
+<li class="lvl-3"><a href="#h3-3-4">3.4 实例层：贝叶斯语义融合</a></li>
+<li class="lvl-3"><a href="#h3-3-5">3.5 拓扑层：4D 场景图</a></li>
+<li class="lvl-3"><a href="#h3-3-6">3.6 视觉-语言导航接口</a></li>
+<li class="lvl-2"><a href="#h2-4">📊 实验与结果</a></li>
+<li class="lvl-3"><a href="#h3-4-1">ScanNet 类别级结果</a></li>
+<li class="lvl-3"><a href="#h3-4-2">消融实验</a></li>
+<li class="lvl-3"><a href="#h3-4-3">运行频率</a></li>
+<li class="lvl-2"><a href="#h2-5">💡 关键见解</a></li>
+<li class="lvl-2"><a href="#h2-6">🔍 局限性与未来工作</a></li>
+<li class="lvl-3"><a href="#h3-6-1">当前局限</a></li>
+<li class="lvl-3"><a href="#h3-6-2">未来方向</a></li>
+<li class="lvl-2"><a href="#h2-7">📚 相关工作对比</a></li>
+<li class="lvl-2"><a href="#h2-8">🎓 综合评价</a></li>
+<li class="lvl-3"><a href="#h3-8-1">优点</a></li>
+<li class="lvl-3"><a href="#h3-8-2">可改进之处</a></li>
+<li class="lvl-3"><a href="#h3-8-3">推荐阅读对象</a></li>
+<li class="lvl-2"><a href="#h2-9">📎 附录</a></li>
+<li class="lvl-3"><a href="#h3-9-1">术语表</a></li>
+<li class="lvl-3"><a href="#h3-9-2">参考资源</a></li>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="toolbar">
+      <button class="btn" id="menu-btn" type="button" aria-label="目录">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <a class="btn back-mobile" href="../../index.html">← 论文库</a><div class="crumb">论文阅读 / 论文技术报告：SuperMap——面向视觉-语言导航的时空 SLAM 系统</div>
+      <div class="spacer"></div>
+      <button class="btn" id="theme-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+        <span id="theme-label">深色</span>
+      </button>
+      <button class="btn" id="print-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2"/><rect x="6" y="14" width="12" height="7"/></svg>
+        打印
+      </button>
+    </div>
+
+    <article class="article" id="content">
+<h1 id="top">论文技术报告：SuperMap——面向视觉-语言导航的时空 SLAM 系统</h1>
+<blockquote class="lead"><p><strong>arXiv ID</strong>：2608.22896<br> <strong>原文标题</strong>：SuperMap: A Spatio-Temporal SLAM System for Visual-Language Navigation<br> <strong>整理日期</strong>：2026-11-25<br> <strong>网页版报告</strong>：<a href="technical_report.html" target="_blank" rel="noopener">technical_report.html</a></p></blockquote>
+<hr>
+<blockquote class="lead"><p><strong>阅读提示</strong>：GitHub 的 Markdown 预览不含本项目排版。完整效果请看 <a href="https://huhhhhha.github.io/paper-library-site/papers/2026-08_supermap/technical_report.html" target="_blank" rel="noopener">网页版报告</a>。</p></blockquote>
+<h2 id="h2-1">📋 论文概览</h2>
+<h3 id="h3-1-1">基本信息</h3>
+<ul><li><strong>作者</strong>：Shibo Zhao、Guofei Chen、Honghao Zhu、Zhiheng Li、Changwei Yao 等</li><li><strong>机构</strong>：卡内基梅隆大学机器人研究所</li><li><strong>发布时间</strong>：2026 年 8 月</li><li><strong>领域</strong>：语义 SLAM、开放词汇建图、4D 场景图、视觉-语言导航</li></ul>
+<h3 id="h3-1-2">一句话总结</h3>
+<p>SuperMap 把高频几何 SLAM 与异步开放词汇感知缝合成一套在线系统，使机器人能够持续维护"什么物体在何处、何时出现或消失、与谁存在何种关系"的可查询世界模型。</p>
+<h3 id="h3-1-3">核心贡献</h3>
+<ol><li>提出实时、开放词汇、实例级的时空语义 SLAM 系统。</li><li>用 3D 投影补偿 2D 跟踪状态，以几何与语义一致性联合维护实例身份。</li><li>将物体地图抽象为带空间边与时间边的 4D 场景图，作为 VLM 的查询接口。</li><li>在 ScanNet、长期动态场景与真机导航上验证，并给出消融、频率与内存分析。</li></ol>
+<figure><img src="assets/fig2.png" alt="SuperMap 三层架构" style="width:88%"><figcaption>图：几何层输出位姿与稠密模型，实例层维护物体身份与变化，拓扑层生成 4D 场景图。</figcaption></figure>
+<hr>
+<h2 id="h2-2">🎯 研究背景与动机</h2>
+<h3 id="h3-2-1">问题定义</h3>
+<p>传统 SLAM 回答"机器人在哪里、几何长什么样"，而人类指令通常涉及对象、关系与历史。论文把场景建模为物体节点加时空关系边的场景图，并要求联合估计位姿 $P_t$、实例身份 $\mathcal I_t$ 与地图 $\mathcal M_t$：</p>
+<div class="equation">$$P(\mathcal I_t,\mathcal M_t,P_t\mid\mathcal M_{t-1},Q_t) \tag{1}$$</div>
+<p>用链式法则拆成三个可独立求解的因子：</p>
+<div class="equation">$$P(\mathcal I_t,\mathcal M_t,P_t\mid\cdot)=\underbrace{P(P_t\mid\cdot)}_{\text{位姿估计}}\underbrace{P(\mathcal I_t\mid\cdot)}_{\text{实例关联}}\underbrace{P(\mathcal M_t\mid\cdot)}_{\text{地图更新}} \tag{2}$$</div>
+<ul><li>$Q_t=\{C_t,D_t\}$：当前 RGB 与深度观测；</li><li>$\mathcal M_{t-1}$：上一时刻地图；$\mathcal I_t$：当前检测的实例 ID 集合；</li><li>三个因子分别对应几何层、实例层的跟踪与更新、以及地图维护。</li></ul>
+<h3 id="h3-2-2">现有方法的局限性</h3>
+<ul><li>静态开放词汇建图依赖完整扫描，难以嵌入在线闭环。</li><li>语义 SLAM 多为闭集、类级，无法稳定跟踪实例身份。</li><li>动态 SLAM 偏重短期运动，忽略物体被移走、新加入等长期变化。</li><li>直接把逐帧基础模型输出写入地图，会积累漏检、视角依赖标签与身份漂移。</li></ul>
+<blockquote><p>[!important] 关键判断 论文把评价标准从"单帧识别精度"改成"长时程身份一致性"，这是后续所有模块设计的出发点。</p></blockquote>
+<figure><img src="assets/fig1.png" alt="SuperMap 捕捉的短期与长期变化" style="width:88%"><figcaption>图：同一张地图需同时容纳行人走动这类短期动态，以及垃圾桶消失、推车出现这类长期变化。</figcaption></figure>
+<hr>
+<h2 id="h2-3">🔬 方法论</h2>
+<p>系统三层结构与数据流见 Fig. 2：几何层输出位姿与稠密地图，实例层维护物体身份与变化，拓扑层把结果组织成 4D 场景图并序列化给 VLM。下面按数据流摘录论文全部核心公式（问题分解的式 (1)–(2) 见上一节）。</p>
+<h3 id="h3-3-1">3.1 几何层：相机位姿</h3>
+<div class="equation">$$P_t = T^{(t)}_{WC} = T^{(t)}_{WB}\,T_{BC} \tag{3}$$</div>
+<ul><li>$T^{(t)}_{WB}\in SE(3)$：$t$ 时刻机体系 $B$ 到世界系 $W$ 的位姿，由 SuperOdometry 估计；</li><li>$T_{BC}$：相机到机体的固定外参，标定一次、全程不变；</li><li>$P_t$：相机位姿，与深度 $D_t$ 一起构成观测 $Q_t$。</li></ul>
+<p>位姿是后续三件事的地基：把 2D 语义观测反投影到 3D、为跟踪提供运动补偿、维持多帧地图的全局一致。</p>
+<h3 id="h3-3-2">3.2 实例层：混合跟踪状态与 3D 运动补偿</h3>
+<p>每条轨迹（tracklet）维护一个解耦状态：</p>
+<div class="equation">$$S_i(t)=\left[\,c_i(t)^\top,\; s_i(t)^\top,\; \dot c_i(t)^\top\,\right]^\top\in\mathbb R^6 \tag{4}$$</div>
+<ul><li>$c_i(t)=[x,y]^\top$：图像平面质心；</li><li>$s_i(t)=[w,h]^\top$：边界框宽高，若包含尺度速度则升为 $\mathbb R^8$；</li><li>$\dot c_i(t)$：图像平面内的平移速度。</li></ul>
+<p>标准 2D 跟踪器在机器人快速机动时会把自运动误判为物体运动。SuperMap 改用地图中实例的 3D 质心 $X_i$ 投影出预测位置：</p>
+<div class="equation">$$\hat c_i(t)=\pi\!\left(K\,P_t^{-1}\,X_i\right) \tag{5}$$</div>
+<ul><li>$X_i$：实例在 $M_{t-1}$ 中的 3D 质心（世界系）；</li><li>$P_t^{-1}$：世界系到当前相机系的变换；</li><li>$K$：相机内参；$\pi(\cdot)$：透视投影。</li></ul>
+<p>该投影作为卡尔曼滤波的先验，代入标准状态转移：</p>
+<div class="equation">$$\hat S_i(t)=F\,S_i(t-1)+w_t,\qquad w_t\sim\mathcal N(0,Q) \tag{6}$$</div>
+<ul><li>$F$：状态转移矩阵；$w_t$：过程噪声，协方差为 $Q$；</li><li>只替换“预测”这一步，不改 ByteTrack 框架，因此大视角变化下实例 ID 仍能连续。</li></ul>
+<h3 id="h3-3-3">3.3 实例层：概率几何一致性更新（变化检测）</h3>
+<p>对上一时刻地图点 $X_k$，定义投影期望深度与深度残差：</p>
+<div class="equation">$$d_{\text{proj}}=\left\|T_{CW}X_k\right\|_z,\qquad \Delta d=d_{\text{proj}}-D(u) \tag{7}$$</div>
+<ul><li>$T_{CW}$：世界系到相机系；$\|\cdot\|_z$ 取变换后的 $z$ 分量；</li><li>$u=\pi(X_k)$：地图点在当前图像的投影像素；</li><li>$D(u)$：该像素的实测深度。</li></ul>
+<p>按阈值 $\tau_\epsilon$ 把每个点分为三类：</p>
+<div class="equation">$$
+s_k(t)=
+\begin{cases}
+\text{Observable}, & |\Delta d|\le\tau_\epsilon\\
+\text{Unobservable}, & \Delta d>\tau_\epsilon\\
+\text{Disappeared}, & \Delta d<-\tau_\epsilon
+\end{cases}
+\tag{9}
+$$</div>
+<ul><li>$\Delta d>\tau_\epsilon$：实测比期望更近，点被前景遮挡，只说明“暂时看不见”，<strong>不能删</strong>；</li><li>$\Delta d<-\tau_\epsilon$：实测比期望更远，点浮在观测表面之前，才作为物体消失的证据；</li><li>只有 Observable 的点参与后续语义更新。</li></ul>
+<p>存在性用 log-odds 递推累积多帧证据：</p>
+<div class="equation">$$L(o_k\mid Q_{1:t})=L(o_k\mid Q_{1:t-1})+\operatorname{logit}\!\left(P(o_k\mid Q_t)\right) \tag{8}$$</div>
+<ul><li>$L(n)=\log\frac{n}{1-n}$：把概率乘法变成加法，可无限递推且数值稳定；</li><li>$P(o_k\mid Q_t)$：由式 (9) 得到的单帧逆传感器模型；</li><li>判为动态或消失的点在更新中被惩罚，累计到阈值才从地图剪除，避免单帧遮挡导致误删。</li></ul>
+<h3 id="h3-3-4">3.4 实例层：贝叶斯语义融合</h3>
+<p>每个实例维护类别分布 $P(L_j=c)$，用贝叶斯递推融合检测器的逐帧观测：</p>
+<div class="equation">$$P(L_j=c\mid z_{1:t})=\eta\,P(z_t\mid L_j=c)\,P(L_j=c\mid z_{1:t-1}) \tag{10}$$</div>
+<ul><li>$L_j$：第 $j$ 个实例的类别变量；$z_t$：当前帧检测结果；</li><li>$P(z_t\mid L_j=c)$：检测器的混淆矩阵；</li><li>$\eta$：归一化常数，保证各类概率之和为 1；</li><li>后验过低的物体点会被移除，抑制同一物体在“椅子／座位／凳子”之间的标签抖动。</li></ul>
+<h3 id="h3-3-5">3.5 拓扑层：4D 场景图</h3>
+<p>地图抽象为图结构：</p>
+<div class="equation">$$G=(V,E_s,E_t)$$</div>
+<ul><li>$V$：物体实例节点；</li><li>$E_s$：空间边，由类别相关的几何谓词建立；</li><li>$E_t$：时间边，由实例关联结果 $I_t$ 串起同一物体的轨迹。</li></ul>
+<p>以“在……上”为例，空间边判据为：</p>
+<div class="equation">$$\mathrm{On}(A,B)\iff\left(z^A_{\min}\approx z^B_{\max}\right)\wedge\left(\mathrm{IoU}_{xy}(B_A,B_B)>\gamma\right)$$</div>
+<ul><li>$z^A_{\min}$、$z^B_{\max}$：A 的最低点与 B 的最高点；</li><li>$\mathrm{IoU}_{xy}(B_A,B_B)$：两个 3D 框在 $xy$ 平面的投影重叠率；</li><li>$\gamma$：重叠阈值；先按质心距离聚类，只在邻近物体对之间判定，避免 $O(N^2)$ 开销。</li></ul>
+<h3 id="h3-3-6">3.6 视觉-语言导航接口</h3>
+<p>局部子图序列化为“实例 ID + 标签 + 3D 质心 + 空间/时间边”的文本，VLM 在 <code>&lt;answer&gt;&lt;/answer&gt;</code> 中返回目标实例 ID，解析器再从地图取出质心作为航点：</p>
+<div class="equation">$$\text{instruction}\;\rightarrow\;\text{VLM}\;\rightarrow\;\{id_j\}\;\rightarrow\;X_j\in\mathbb R^3\;\rightarrow\;\text{waypoint}$$</div>
+<ul><li>语言只负责“选哪个物体”，坐标由确定性模块查表得到；</li><li>因此 VLM 的幻觉不会直接进入控制回路，输出始终是可执行的 3D 坐标。</li></ul>
+<hr>
+<h2 id="h2-4">📊 实验与结果</h2>
+<h3 id="h3-4-1">ScanNet 类别级结果</h3>
+<div class="table-wrap"><table><thead><tr><th>方法</th><th>表示方式</th><th class="align-right">无背景 mIoU</th><th class="align-right">无背景 Acc</th><th class="align-right">含背景 Acc</th></tr></thead><tbody><tr><td>RayFronts</td><td>点特征</td><td class="align-right"><strong>41.29</strong></td><td class="align-right"><strong>56.76</strong></td><td class="align-right"><strong>49.15</strong></td></tr><tr><td>ConceptGraphs</td><td>物体级</td><td class="align-right">21.62</td><td class="align-right">31.05</td><td class="align-right">35.80</td></tr><tr><td>HOV-SG</td><td>物体级</td><td class="align-right">26.79</td><td class="align-right">35.17</td><td class="align-right"><strong>38.52</strong></td></tr><tr><td><strong>SuperMap</strong></td><td>物体级</td><td class="align-right"><strong>27.42</strong></td><td class="align-right"><strong>55.48</strong></td><td class="align-right">33.00</td></tr></tbody></table></div>
+<p>SuperMap 的无背景准确率为 <strong>55.48%</strong>，比 RayFronts 低 <strong>1.28</strong> 个百分点，但明显优于其他物体级方法。</p>
+<h3 id="h3-4-2">消融实验</h3>
+<div class="table-wrap"><table><thead><tr><th>配置</th><th class="align-right">精确率</th><th class="align-right">召回率</th><th class="align-right">F1</th></tr></thead><tbody><tr><td>去除 2D 跟踪器</td><td class="align-right">0.7787</td><td class="align-right">0.4595</td><td class="align-right">0.5780</td></tr><tr><td>去除语义融合</td><td class="align-right">0.7929</td><td class="align-right">0.3870</td><td class="align-right">0.5201</td></tr><tr><td>去除几何一致性更新</td><td class="align-right">0.8189</td><td class="align-right">0.4448</td><td class="align-right">0.5764</td></tr><tr><td><strong>完整系统</strong></td><td class="align-right"><strong>0.8677</strong></td><td class="align-right"><strong>0.4955</strong></td><td class="align-right"><strong>0.6308</strong></td></tr></tbody></table></div>
+<p>三个模块均有贡献，其中语义融合缺席时 F1 下降最多（<strong>0.1107</strong>）。</p>
+<h3 id="h3-4-3">运行频率</h3>
+<div class="table-wrap"><table><thead><tr><th>模块</th><th>更新频率</th></tr></thead><tbody><tr><td>位姿估计</td><td>10 Hz</td></tr><tr><td>稠密 3D 建图</td><td>3 Hz</td></tr><tr><td>2D 实例分割</td><td>1 Hz</td></tr><tr><td>4D 场景图更新</td><td>5 Hz</td></tr></tbody></table></div>
+<hr>
+<h2 id="h2-5">💡 关键见解</h2>
+<ol><li><strong>可见性是动态地图更新的中间变量。</strong> 仅凭"本帧没检测到"无法判断消失，必须先由几何判断物体是否本应可见。</li><li><strong>3D 地图不仅是输出，也是跟踪器的先验。</strong> 把已建图实例投影回当前帧，可把自运动从图像运动中分离。</li><li><strong>场景图是感知与行动之间的接口契约。</strong> VLM 只返回实例 ID，坐标由确定性模块查表，降低幻觉进入控制链路的风险。</li></ol>
+<hr>
+<h2 id="h2-6">🔍 局限性与未来工作</h2>
+<h3 id="h3-6-1">当前局限</h3>
+<ol><li><strong>高动态对象仍然困难。</strong> 混合状态主要补偿相机运动，对快速非线性运动建模薄弱。</li><li><strong>开放词汇并不完全开放。</strong> 2D 检测依赖预定义提示词列表，无法自动发现未知类别。</li><li><strong>语义前端构成瓶颈。</strong> 分割只有 1 Hz，新出现的推车检测召回仅 <strong>0.262</strong>。</li><li><strong>定量范围有限。</strong> 长期变化实验仅 6 个目标物体，消融场景 41 个标注物体。</li><li><strong>依赖准确位姿与标定。</strong> 论文未系统量化 SLAM 漂移与深度噪声的误差传播。</li></ol>
+<h3 id="h3-6-2">未来方向</h3>
+<ul><li>引入面向高动态对象的 tracking-by-detection 或学习型运动模型。</li><li>结合开放世界对象发现与自动提示生成。</li><li>建立大规模时空问答与语言导航基准，报告成功率与 token 成本。</li></ul>
+<hr>
+<h2 id="h2-7">📚 相关工作对比</h2>
+<div class="table-wrap"><table><thead><tr><th>方法</th><th>核心思想</th><th>优势</th><th>局限</th></tr></thead><tbody><tr><td>ConceptGraphs / HOV-SG</td><td>离线重建后用 SAM/CLIP 构建对象图</td><td>开放词汇查询</td><td>依赖完整扫描，构建慢</td></tr><tr><td>Kimera</td><td>实时语义 SLAM 与 3D 场景图</td><td>几何—语义一体</td><td>闭集类别</td></tr><tr><td>Khronos</td><td>时空语义地图</td><td>显式建模长期变化</td><td>闭集、实例跟踪弱、非实时</td></tr><tr><td><strong>SuperMap</strong></td><td>3D 辅助 2D 跟踪、概率更新、4D 图</td><td>在线、开放词汇、实例级</td><td>动态跟踪与规模验证不足</td></tr></tbody></table></div>
+<hr>
+<h2 id="h2-8">🎓 综合评价</h2>
+<h3 id="h3-8-1">优点</h3>
+<ul><li>问题设置贴近长期自主机器人需求，把位姿、身份、地图维护与语言行动连成闭环。</li><li>模块职责清晰，"先几何可见性、后语义校验"的设计合理且易复现。</li></ul>
+<h3 id="h3-8-2">可改进之处</h3>
+<ul><li>需要更大规模的长期变化基准，以及针对重复实例、严重遮挡、位姿漂移的压力测试。</li><li>应给出场景图问答与导航的统计结果，而不只展示成功案例。</li></ul>
+<h3 id="h3-8-3">推荐阅读对象</h3>
+<p>适合从事语义 SLAM、动态建图、开放词汇 3D 感知与具身记忆的研究者，尤其适合作为"基础模型接入长期在线系统"的设计案例。</p>
+<hr>
+<h2 id="h2-9">📎 附录</h2>
+<h3 id="h3-9-1">术语表</h3>
+<div class="table-wrap"><table><thead><tr><th>英文</th><th>中文</th></tr></thead><tbody><tr><td>Spatio-Temporal SLAM</td><td>时空 SLAM</td></tr><tr><td>Open-Vocabulary Perception</td><td>开放词汇感知</td></tr><tr><td>4D Scene Graph</td><td>4D 场景图</td></tr><tr><td>Visual-Language Navigation (VLN)</td><td>视觉-语言导航</td></tr></tbody></table></div>
+<h3 id="h3-9-2">参考资源</h3>
+<ul><li><strong>论文原文</strong>：<a href="https://arxiv.org/abs/2608.22896" target="_blank" rel="noopener">arXiv:2608.22896</a></li><li><strong>项目主页</strong>：<a href="https://superodometry.com/supermap" target="_blank" rel="noopener">superodometry.com/supermap</a></li></ul>
+    </article>
+
+    <footer class="site-footer">
+      由 List_paper 技能生成 · 单文件 HTML · 图片位于 assets/ · 公式由 MathJax 渲染
+    </footer>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var label = document.getElementById("theme-label");
+  function syncLabel() { label.textContent = root.getAttribute("data-theme") === "dark" ? "浅色" : "深色"; }
+  syncLabel();
+  document.getElementById("theme-btn").addEventListener("click", function () {
+    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("lp-theme", next); } catch (e) {}
+    syncLabel();
+  });
+  document.getElementById("print-btn").addEventListener("click", function () { window.print(); });
+  document.getElementById("menu-btn").addEventListener("click", function () {
+    document.body.classList.toggle("nav-open");
+  });
+
+  // TOC search
+  var filter = document.getElementById("toc-filter");
+  if (filter) {
+    filter.addEventListener("input", function () {
+      var q = this.value.trim().toLowerCase();
+      document.querySelectorAll("#toc-nav li").forEach(function (li) {
+        li.style.display = !q || li.textContent.toLowerCase().indexOf(q) !== -1 ? "" : "none";
+      });
+    });
+  }
+
+  // reading progress
+  var bar = document.getElementById("progress");
+  function onScroll() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+  }
+
+  // scroll spy (position based, robust for fast jumps)
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc-nav a"));
+  var heads = links
+    .map(function (a) {
+      var id = a.getAttribute("href");
+      return id && id.charAt(0) === "#" ? document.getElementById(id.slice(1)) : null;
+    })
+    .filter(Boolean);
+  var activeId = "";
+  function setActive(id) {
+    if (id === activeId) return;
+    activeId = id;
+    var matched = null;
+    links.forEach(function (a) {
+      var hit = a.getAttribute("href") === "#" + id;
+      a.classList.toggle("active", hit);
+      if (hit) matched = a;
+    });
+    if (matched) {
+      var nav = document.getElementById("toc-nav");
+      var nr = nav.getBoundingClientRect();
+      var ar = matched.getBoundingClientRect();
+      if (ar.top < nr.top + 12) nav.scrollTop += ar.top - nr.top - 12;
+      else if (ar.bottom > nr.bottom - 12) nav.scrollTop += ar.bottom - nr.bottom + 12;
+    }
+  }
+  function spy() {
+    if (!heads.length) return;
+    var line = window.scrollY + 120;
+    var cur = heads[0];
+    heads.forEach(function (h) {
+      if (h.getBoundingClientRect().top + window.scrollY <= line) cur = h;
+    });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8) {
+      cur = heads[heads.length - 1];
+    }
+    setActive(cur.id);
+  }
+  function onScrollAll() {
+    onScroll();
+    spy();
+  }
+  document.addEventListener("scroll", onScrollAll, { passive: true });
+  window.addEventListener("resize", spy);
+  spy();
+  onScroll();
+  // fallback for environments that do not dispatch scroll events (embedded views, automation)
+  setInterval(function () {
+    if (!document.hidden) spy();
+  }, 600);
+
+  // close mobile nav on click
+  document.querySelectorAll("#toc-nav a").forEach(function (a) {
+    a.addEventListener("click", function () { document.body.classList.remove("nav-open"); });
+  });
+})();
+</script>
+</body>
+</html>

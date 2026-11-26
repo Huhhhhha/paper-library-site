@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>论文阅读库</title>
+<script>
+(function(){try{var t=localStorage.getItem("lp-site-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();
+</script>
+<style>
+:root{
+  --sidebar-w:300px;--bg:#ffffff;--bg-soft:#fafafa;--fg:#333;--fg-strong:#111418;
+  --muted:#6b7280;--line:#e6e8eb;--line-strong:#d8dde2;--accent:#2563eb;
+  --accent-soft:rgba(37,99,235,.09);--card:#ffffff;--shadow:0 10px 30px rgba(15,23,42,.07);
+}
+html[data-theme="dark"]{
+  --bg:#16181d;--bg-soft:#121418;--fg:#d7dbe0;--fg-strong:#f1f4f8;--muted:#98a2ae;
+  --line:#2a2f36;--line-strong:#343a43;--accent:#6ea8fe;--accent-soft:rgba(110,168,254,.13);
+  --card:#1b1f26;--shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.8;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  -webkit-font-smoothing:antialiased;}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--bg-soft);
+  border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:50}
+.brand{padding:24px 22px 16px;border-bottom:1px solid var(--line)}
+.kicker{font-size:11px;letter-spacing:.16em;color:var(--muted);margin-bottom:6px}
+.brand h1{font-size:17px;margin:0;color:var(--fg-strong);line-height:1.4}
+.brand .sub{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.brand .sub b{color:var(--accent)}
+.search{padding:14px 18px 6px}
+.search input{width:100%;padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--bg);color:var(--fg);font-size:13px;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+nav{flex:1;overflow-y:auto;padding:8px 12px 20px}
+.year{margin:16px 10px 6px;font-size:11.5px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.nav-item{display:block;padding:8px 10px;border-radius:8px;border-left:3px solid transparent;color:var(--fg)}
+.nav-item:hover{background:var(--accent-soft);text-decoration:none}
+.nav-title{display:block;font-size:13.5px;font-weight:600;line-height:1.5}
+.nav-sub{display:block;font-size:11.5px;color:var(--muted);line-height:1.5}
+.side-foot{padding:12px 20px;border-top:1px solid var(--line);font-size:12px}
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0}
+.topbar{position:sticky;top:0;z-index:40;height:56px;display:flex;align-items:center;gap:10px;
+  padding:0 28px;border-bottom:1px solid var(--line);
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(180%) blur(10px)}
+.crumb{font-size:13px;color:var(--muted)}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--line-strong);
+  border-radius:8px;background:var(--bg);color:var(--fg);font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+#menu-btn{display:none}
+.wrap{max-width:900px;margin:0 auto;padding:44px 48px 80px}
+.hero h2{font-size:30px;line-height:1.4;margin:0 0 12px;color:var(--fg-strong)}
+.hero p{margin:0;color:var(--muted);font-size:15px;max-width:640px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0 34px}
+.stat{border:1px solid var(--line);background:var(--bg-soft);border-radius:10px;padding:12px 18px;min-width:120px}
+.stat b{display:block;font-size:22px;color:var(--accent);line-height:1.3}
+.stat span{font-size:12px;color:var(--muted)}
+.section-head{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+.section-head h3{font-size:15px;margin:0;color:var(--fg-strong);letter-spacing:.02em}
+.section-head small{color:var(--muted);font-size:12px}
+.paper{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:22px 24px;
+  margin-bottom:16px;transition:.18s;box-shadow:0 1px 0 rgba(15,23,42,.02)}
+.paper:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line-strong)}
+.paper-meta{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.badge{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--accent-soft);
+  color:var(--accent);font-size:11.5px;font-weight:600}
+.paper h3{font-size:20px;line-height:1.5;margin:10px 0 2px}
+.paper h3 a{color:var(--fg-strong)}
+.paper h3 a:hover{color:var(--accent);text-decoration:none}
+.en{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.summary{margin:10px 0 16px;color:var(--fg);font-size:14.5px}
+.paper-foot{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;
+  border-top:1px dashed var(--line);padding-top:14px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tags span{font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions a{font-size:12.5px;padding:5px 11px;border:1px solid var(--line-strong);border-radius:8px;color:var(--fg)}
+.actions a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+.actions a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.actions a.primary:hover{filter:brightness(1.06);color:#fff}
+.empty{display:none;padding:40px 0;color:var(--muted)}
+footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);transition:transform .22s ease;box-shadow:var(--shadow)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  .main{margin-left:0}
+  #menu-btn{display:inline-flex}
+  .wrap{padding:28px 20px 60px}
+  .hero h2{font-size:24px}
+}
+@media print{
+  .sidebar,.topbar{display:none}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="kicker">PAPER LIBRARY</div>
+      <h1>论文阅读库</h1>
+      <div class="sub">Huhhhhha · 已读 <b>1</b> 篇</div>
+    </div>
+    <div class="search">
+      <input id="q" type="search" placeholder="搜索论文、标签…" autocomplete="off">
+    </div>
+    <nav id="nav"><div class="year">2026</div>
+<a class="nav-item" href="papers/2026-08_supermap/technical_report.html" data-key="supermap supermap：面向视觉-语言导航的时空 slam 系统 supermap: a spatio-temporal slam system for visual-language navigation 语义 slam 开放词汇 4d 场景图 视觉-语言导航"><span class="nav-title">SuperMap</span><span class="nav-sub">SuperMap：面向视觉-语言导航的时空 SLAM 系统</span></a></nav>
+    <div class="side-foot"><a href="https://github.com/Huhhhhha/paper-library-site" target="_blank" rel="noopener">GitHub 仓库 ↗</a></div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn" id="menu-btn" aria-label="目录">☰</button>
+      <div class="crumb">论文阅读库</div>
+      <div class="spacer"></div>
+      <a class="btn" href="https://github.com/Huhhhhha/paper-library-site" target="_blank" rel="noopener">GitHub</a>
+      <button class="btn" id="theme-btn"><span id="theme-label">深色</span></button>
+    </div>
+    <div class="wrap">
+      <section class="hero">
+        <h2>把读过的论文，沉淀成可检索的知识库</h2>
+        <p>每篇论文收录技术报告、精读笔记与网页版报告，按阅读时间归档；报告里的数字均回原文核对，并保留对方法与实验的批判性评价。</p>
+        <div class="stats">
+          <div class="stat"><b>1</b><span>篇论文</span></div>
+          <div class="stat"><b>4</b><span>个主题标签</span></div>
+          <div class="stat"><b>2026-11-25</b><span>最近阅读</span></div>
+        </div>
+      </section>
+      <div class="section-head"><h3>全部论文</h3><small>按阅读时间倒序</small></div>
+      <section id="list"><article class="paper" data-key="supermap supermap：面向视觉-语言导航的时空 slam 系统 supermap: a spatio-temporal slam system for visual-language navigation 语义 slam 开放词汇 4d 场景图 视觉-语言导航">
+  <div class="paper-meta">
+    <span class="badge">arXiv 2608.22896</span>
+    <span>2026-08 · 阅读于 2026-11-25</span>
+  </div>
+  <h3><a href="papers/2026-08_supermap/technical_report.html">SuperMap：面向视觉-语言导航的时空 SLAM 系统</a></h3>
+  <div class="en">SuperMap: A Spatio-Temporal SLAM System for Visual-Language Navigation</div>
+  <p class="summary">把高频几何 SLAM 与异步开放词汇感知缝合成一套在线系统，用一致性驱动的实例维护机制构建可查询的 4D 场景图。</p>
+  <div class="paper-foot">
+    <div class="tags"><span>语义 SLAM</span><span>开放词汇</span><span>4D 场景图</span><span>视觉-语言导航</span></div>
+    <div class="actions">
+      <a class="primary" href="papers/2026-08_supermap/technical_report.html">技术报告</a>
+      
+      <a href="https://arxiv.org/abs/2608.22896" target="_blank" rel="noopener">arXiv ↗</a>
+    </div>
+  </div>
+</article></section>
+      <div class="empty" id="empty">没有匹配的论文，换个关键词试试。</div>
+      <footer>由 <a href="https://github.com/Huhhhhha/paper-library-site" target="_blank" rel="noopener">paper-library</a> 维护 · 托管于 GitHub Pages · 报告由 List_paper 生成</footer>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var root=document.documentElement, label=document.getElementById("theme-label");
+  function sync(){label.textContent=root.getAttribute("data-theme")==="dark"?"浅色":"深色";}
+  sync();
+  document.getElementById("theme-btn").addEventListener("click",function(){
+    var next=root.getAttribute("data-theme")==="dark"?"light":"dark";
+    root.setAttribute("data-theme",next);
+    try{localStorage.setItem("lp-site-theme",next);}catch(e){}
+    sync();
+  });
+  document.getElementById("menu-btn").addEventListener("click",function(){document.body.classList.toggle("nav-open");});
+
+  var papers=Array.prototype.slice.call(document.querySelectorAll(".paper"));
+  var navs=Array.prototype.slice.call(document.querySelectorAll(".nav-item"));
+  var years=Array.prototype.slice.call(document.querySelectorAll(".year"));
+  var empty=document.getElementById("empty");
+  document.getElementById("q").addEventListener("input",function(){
+    var q=this.value.trim().toLowerCase(), shown=0;
+    papers.forEach(function(p){
+      var hit=!q||p.getAttribute("data-key").indexOf(q)!==-1;
+      p.style.display=hit?"":"none"; if(hit) shown++;
+    });
+    navs.forEach(function(a){
+      var hit=!q||a.getAttribute("data-key").indexOf(q)!==-1;
+      a.style.display=hit?"":"none";
+    });
+    years.forEach(function(y){
+      var any=Array.prototype.slice.call(y.parentNode.querySelectorAll(".nav-item")).some(function(a){return a.style.display!=="none";});
+      y.style.display=any?"":"none";
+    });
+    empty.style.display=shown?"none":"block";
+  });
+  navs.forEach(function(a){a.addEventListener("click",function(){document.body.classList.remove("nav-open");});});
+})();
+</script>
+</body>
+</html>
